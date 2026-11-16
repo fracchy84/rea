@@ -1,0 +1,142 @@
+<!doctype html>
+<html lang="it">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="robots" content="noindex,nofollow">
+  <title>Pannello richieste</title>
+  <style>
+    :root { --ink:#14233a; --muted:#5b6b80; --line:#dde4ee; --bg:#f4f6fa; --deep:#0f3d6b; --sun:#f5a300; --err:#c0392b; }
+    * { box-sizing: border-box; }
+    body { margin:0; font-family: system-ui,-apple-system,"Segoe UI",Roboto,sans-serif; background:var(--bg); color:var(--ink); }
+    header { background:#fff; border-bottom:1px solid var(--line); padding:12px 16px; display:flex; gap:12px; align-items:center; flex-wrap:wrap; }
+    header h1 { font-size:1.1rem; margin:0; color:var(--deep); margin-right:auto; }
+    main { max-width:1100px; margin:0 auto; padding:16px; }
+    input, select, textarea, button { font:inherit; }
+    input, select, textarea { padding:9px 10px; border:1px solid var(--line); border-radius:8px; background:#fff; color:var(--ink); }
+    button { cursor:pointer; padding:9px 14px; border-radius:8px; border:1px solid var(--line); background:#fff; }
+    button.primary { background:var(--sun); border-color:var(--sun); font-weight:700; color:#2a1c00; }
+    a.btn { text-decoration:none; color:var(--ink); padding:9px 14px; border:1px solid var(--line); border-radius:8px; background:#fff; }
+    .login { max-width:340px; margin:80px auto; background:#fff; border:1px solid var(--line); border-radius:12px; padding:22px; display:grid; gap:12px; }
+    .login h1 { margin:0; font-size:1.2rem; color:var(--deep); }
+    .err { color:var(--err); font-weight:600; font-size:.9rem; min-height:1.2em; }
+    .chips { display:flex; gap:8px; flex-wrap:wrap; margin-bottom:12px; }
+    .chip { border-radius:99px; padding:6px 12px; font-size:.85rem; }
+    .chip.on { background:var(--deep); color:#fff; border-color:var(--deep); }
+    .toolbar { display:flex; gap:10px; margin-bottom:12px; flex-wrap:wrap; }
+    .toolbar input { flex:1; min-width:200px; }
+    .lead { background:#fff; border:1px solid var(--line); border-radius:12px; padding:14px; margin-bottom:10px; }
+    .lead-h { display:flex; gap:10px; align-items:baseline; flex-wrap:wrap; }
+    .lead-h b { font-size:1.05rem; }
+    .muted { color:var(--muted); font-size:.85rem; }
+    .grid { display:grid; grid-template-columns:repeat(auto-fit,minmax(170px,1fr)); gap:6px 16px; margin:10px 0; font-size:.92rem; }
+    .grid span { color:var(--muted); display:block; font-size:.75rem; text-transform:uppercase; letter-spacing:.4px; }
+    .edit { display:grid; grid-template-columns:200px 1fr; gap:10px; margin-top:8px; }
+    .edit textarea { grid-column:1 / -1; min-height:58px; }
+    .badge { font-size:.75rem; font-weight:700; padding:3px 9px; border-radius:99px; background:#fff4d9; color:#7a5200; }
+    .badge.venduta { background:#dff3e6; color:#1f6b3b; }
+    .badge.persa { background:#f3e1df; color:#8a2d22; }
+    .saved { color:#1f8a4c; font-size:.8rem; opacity:0; transition:opacity .2s; }
+    .saved.on { opacity:1; }
+    @media (max-width:560px){ .edit{grid-template-columns:1fr;} }
+  </style>
+</head>
+<body>
+  <div id="app"></div>
+<script>
+const app = document.getElementById("app");
+let stati = [], filtro = "", q = "";
+
+const esc = (s) => String(s ?? "").replace(/[&<>"']/g, (c) => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
+const api = async (url, opts = {}) => {
+  const r = await fetch(url, { headers: { "Content-Type": "application/json" }, ...opts });
+  const d = await r.json().catch(() => ({}));
+  if (!r.ok) { const e = new Error(d.errore || "Errore"); e.status = r.status; throw e; }
+  return d;
+};
+
+function loginView(msg = "") {
+  app.innerHTML = `<form class="login" id="lf">
+    <h1>Pannello richieste</h1>
+    <input type="password" id="pw" placeholder="Password" autocomplete="current-password" required autofocus>
+    <div class="err" id="le">${esc(msg)}</div>
+    <button class="primary">Entra</button></form>`;
+  document.getElementById("lf").onsubmit = async (e) => {
+    e.preventDefault();
+    try { await api("/api/admin/login", { method: "POST", body: JSON.stringify({ password: document.getElementById("pw").value }) }); start(); }
+    catch (err) { document.getElementById("le").textContent = err.message; }
+  };
+}
+
+function fmtData(s) {
+  const d = new Date(s.replace(" ", "T") + "Z");
+  return d.toLocaleString("it-IT", { day: "2-digit", month: "2-digit", year: "numeric", hour: "2-digit", minute: "2-digit" });
+}
+
+async function load() {
+  const p = new URLSearchParams();
+  if (filtro) p.set("stato", filtro);
+  if (q) p.set("q", q);
+  const { leads, conteggi, stati: s } = await api("/api/admin/leads?" + p);
+  stati = s;
+  const tot = Object.values(conteggi).reduce((a, b) => a + b, 0);
+  document.getElementById("chips").innerHTML =
+    `<button class="chip ${filtro === "" ? "on" : ""}" data-s="">Tutte (${tot})</button>` +
+    stati.map((st) => `<button class="chip ${filtro === st ? "on" : ""}" data-s="${esc(st)}">${esc(st)} (${conteggi[st] || 0})</button>`).join("");
+  document.querySelectorAll(".chip").forEach((b) => b.onclick = () => { filtro = b.dataset.s; load(); });
+
+  document.getElementById("list").innerHTML = leads.length ? leads.map((l) => `
+    <article class="lead" data-id="${l.id}">
+      <div class="lead-h">
+        <b>${esc(l.nome)} ${esc(l.cognome)}</b>
+        <span class="badge ${l.stato === "venduta" ? "venduta" : l.stato === "persa" ? "persa" : ""}">${esc(l.stato)}</span>
+        <span class="muted">${fmtData(l.created_at)}</span>
+        <span class="saved">salvato</span>
+      </div>
+      <div class="grid">
+        <div><span>Telefono</span><a href="tel:${esc(l.telefono)}">${esc(l.telefono)}</a></div>
+        <div><span>Email</span><a href="mailto:${esc(l.email)}">${esc(l.email)}</a></div>
+        <div><span>Località</span>${esc(l.cap)} ${esc(l.comune)}</div>
+        <div><span>Immobile</span>${esc(l.immobile)}</div>
+        <div><span>Tetto</span>${esc(l.tetto)}</div>
+        <div><span>Bolletta</span>${esc(l.bolletta)}</div>
+        <div><span>Accumulo</span>${esc(l.accumulo)}</div>
+        <div><span>Tempistica</span>${esc(l.tempistica)}</div>
+        <div><span>Origine</span>${esc([l.utm_source, l.utm_campaign].filter(Boolean).join(" / ") || "diretta")}</div>
+      </div>
+      <div class="edit">
+        <select data-f="stato">${stati.map((st) => `<option ${st === l.stato ? "selected" : ""}>${esc(st)}</option>`).join("")}</select>
+        <input data-f="assegnata_a" placeholder="Girata a (nome installatore)" value="${esc(l.assegnata_a)}">
+        <textarea data-f="note_interne" placeholder="Note interne">${esc(l.note_interne)}</textarea>
+      </div>
+    </article>`).join("") : `<p class="muted">Nessuna richiesta.</p>`;
+
+  document.querySelectorAll(".lead").forEach((card) => {
+    const id = card.dataset.id;
+    const flash = () => { const s = card.querySelector(".saved"); s.classList.add("on"); setTimeout(() => s.classList.remove("on"), 1200); };
+    card.querySelectorAll("[data-f]").forEach((f) => {
+      f.onchange = async () => {
+        try { await api("/api/admin/leads/" + id, { method: "PATCH", body: JSON.stringify({ [f.dataset.f]: f.value }) }); flash();
+          if (f.dataset.f === "stato") load(); }
+        catch (e) { alert(e.message); }
+      };
+    });
+  });
+}
+
+async function start() {
+  try { await api("/api/admin/me"); }
+  catch (e) { return loginView(e.status === 503 ? "Pannello disattivato: manca ADMIN_PASSWORD sul server." : ""); }
+  app.innerHTML = `<header><h1>Richieste di preventivo</h1>
+      <a class="btn" href="/api/admin/export.csv">Scarica CSV</a><button id="out">Esci</button></header>
+    <main><div class="chips" id="chips"></div>
+      <div class="toolbar"><input id="qs" placeholder="Cerca nome, telefono, email, CAP…"></div>
+      <div id="list"></div></main>`;
+  document.getElementById("out").onclick = async () => { await api("/api/admin/logout", { method: "POST" }); loginView(); };
+  let t; document.getElementById("qs").oninput = (e) => { clearTimeout(t); t = setTimeout(() => { q = e.target.value; load(); }, 250); };
+  load();
+}
+start();
+</script>
+</body>
+</html>

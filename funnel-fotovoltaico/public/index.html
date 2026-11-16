@@ -1,0 +1,58 @@
+<!doctype html>
+<html lang="it">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Preventivo fotovoltaico gratuito</title>
+  <meta name="description" content="Richiedi un preventivo gratuito e senza impegno per il tuo impianto fotovoltaico. Rispondi a poche domande, ti ricontattiamo noi.">
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <header class="top">
+    <div class="wrap top-in">
+      <div class="brand" id="brand">Fotovoltaico</div>
+      <a class="tel" id="telLink" href="#" hidden></a>
+    </div>
+  </header>
+
+  <main class="wrap">
+    <section class="hero">
+      <h1>Quanto puoi risparmiare con il fotovoltaico?</h1>
+      <p class="lead">Rispondi a poche domande veloci. Un tecnico ti ricontatta con un preventivo gratuito e senza impegno.</p>
+    </section>
+
+    <section class="card" aria-live="polite">
+      <div class="progress" aria-hidden="true"><span id="bar"></span></div>
+      <p class="step-count" id="stepCount"></p>
+
+      <form id="form" novalidate>
+        <div id="stage"></div>
+        <input type="text" name="sito_web" class="hp" tabindex="-1" autocomplete="off" aria-hidden="true">
+        <p class="error" id="error" role="alert" hidden></p>
+        <div class="nav">
+          <button type="button" class="btn ghost" id="back" hidden>Indietro</button>
+          <button type="button" class="btn primary" id="next">Continua</button>
+        </div>
+      </form>
+
+      <div id="done" hidden>
+        <div class="check">✓</div>
+        <h2>Richiesta inviata!</h2>
+        <p>Grazie <strong id="doneName"></strong>. Ti contatteremo al più presto, di solito entro un giorno lavorativo, al numero che ci hai lasciato.</p>
+      </div>
+    </section>
+
+    <ul class="trust">
+      <li><strong>Gratuito</strong><span>nessun costo per il preventivo</span></li>
+      <li><strong>Senza impegno</strong><span>decidi tu se procedere</span></li>
+      <li><strong>Dati protetti</strong><span>non li cediamo senza consenso</span></li>
+    </ul>
+  </main>
+
+  <footer class="wrap foot">
+    <span id="footBrand"></span> · <a href="privacy.html">Informativa privacy</a>
+  </footer>
+
+  <script src="app.js"></script>
+</body>
+</html>

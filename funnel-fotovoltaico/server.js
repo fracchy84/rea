@@ -15,7 +15,7 @@ const AZIENDA_TELEFONO = process.env.AZIENDA_TELEFONO || "";
 const ADMIN_PASSWORD = process.env.ADMIN_PASSWORD || "";
 const SESSION_SECRET =
   process.env.SESSION_SECRET || crypto.randomBytes(32).toString("hex");
-const NOTIFY_EMAIL = process.env.NOTIFY_EMAIL || "";
+const NOTIFY_EMAIL = process.env.NOTIFY_EMAIL || "g.fracchiolla@fracchiolla.it";
 const DB_PATH = process.env.DB_PATH || path.join(__dirname, "data", "leads.db");
 
 if (!ADMIN_PASSWORD) {

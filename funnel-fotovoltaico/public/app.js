@@ -47,7 +47,6 @@
 
   fetch("/api/config").then((r) => r.json()).then((c) => {
     document.title = `Preventivo fotovoltaico gratuito | ${c.azienda}`;
-    $("#brand").textContent = c.azienda;
     $("#footBrand").textContent = c.azienda;
     if (c.telefono) {
       const a = $("#telLink");
